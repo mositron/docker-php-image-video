@@ -10,8 +10,8 @@ RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.n
   && rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg/RPM-GPG-KEY-remi /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7 \
   && yum update -y \
   && yum-config-manager --enable remi-php71 \
-  && yum install -y php-common php-cli php-process php-gd php-mbstring php-pecl-zip php-mcrypt php-xml php-pecl-apc php-pecl-mongodb php-xmlrpc php-opcache php-fpm inkscape  \
-  && yum clean all
+  && yum install -y php-common php-cli php-process php-gd php-mbstring php-pecl-zip php-mcrypt php-xml php-pecl-apc php-pecl-mongodb php-xmlrpc php-opcache php-fpm inkscape
+#  && yum clean all
 
 RUN echo "date.timezone=$PHP_TIMEZONE" > /etc/php.d/00-date-timezone.ini
 
@@ -26,17 +26,17 @@ RUN chmod a+x /php_run.sh
 
 EXPOSE $PHP_PORT
 
-
 WORKDIR /var/www
 
-
+ENTRYPOINT []
+CMD ["/php_run.sh"]
 
 
 ENV         FFMPEG_VERSION=3.2.4     \
             FDKAAC_VERSION=0.1.5      \
             LAME_VERSION=3.99.5       \
             OGG_VERSION=1.3.2         \
-            OPENCOREAMR_VERSION=0.1.4 \
+            OPENCOREAMR_VERSION=0.1.5 \
             OPUS_VERSION=1.1.4        \
             THEORA_VERSION=1.1.1      \
             VORBIS_VERSION=1.3.5      \
@@ -75,36 +75,40 @@ RUN     buildDeps="autoconf \
         export MAKEFLAGS="-j$(($(nproc) + 1))" && \
         echo "${SRC}/lib" > /etc/ld.so.conf.d/libc.conf && \
         yum --enablerepo=extras install -y epel-release && \
-        yum install -y ${buildDeps} && \
-#RUN  \
+        yum install -y ${buildDeps}
+
 ## opencore-amr https://sourceforge.net/projects/opencore-amr/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
-        curl -sL https://downloads.sf.net/project/opencore-amr/opencore-amr/opencore-amr-${OPENCOREAMR_VERSION}.tar.gz | \
+        curl -sL http://downloads.sf.net/project/opencore-amr/opencore-amr/opencore-amr-${OPENCOREAMR_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
         ./configure --prefix="${SRC}" --bindir="${SRC}/bin" --enable-shared --datadir=${DIR} && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## x264 http://www.videolan.org/developers/x264.html
+RUN  \
        DIR=$(mktemp -d) && cd ${DIR} && \
        curl -sL https://ftp.videolan.org/pub/videolan/x264/snapshots/x264-snapshot-${X264_VERSION}.tar.bz2 | \
        tar -jx --strip-components=1 && \
        ./configure --prefix="${SRC}" --bindir="${SRC}/bin" --enable-pic --enable-shared --disable-cli && \
        make && \
        make install && \
-       rm -rf ${DIR} && \
-#RUN  \
+       rm -rf ${DIR}
+
 ## x265 http://x265.org/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sL https://download.videolan.org/pub/videolan/x265/x265_${X265_VERSION}.tar.gz  | \
         tar -zx && \
         cd x265_${X265_VERSION}/build/linux && \
         ./multilib.sh && \
         make -C 8bit install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## libogg https://www.xiph.org/ogg/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sLO http://downloads.xiph.org/releases/ogg/libogg-${OGG_VERSION}.tar.gz && \
         echo ${OGG_SHA256SUM} | sha256sum --check && \
@@ -112,9 +116,10 @@ RUN     buildDeps="autoconf \
         ./configure --prefix="${SRC}" --bindir="${SRC}/bin" --disable-static --datarootdir=${DIR} && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## libopus https://www.opus-codec.org/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sLO http://downloads.xiph.org/releases/opus/opus-${OPUS_VERSION}.tar.gz && \
         echo ${OPUS_SHA256SUM} | sha256sum --check && \
@@ -123,9 +128,10 @@ RUN     buildDeps="autoconf \
         ./configure --prefix="${SRC}" --disable-static --datadir="${DIR}" && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## libvorbis https://xiph.org/vorbis/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sLO http://downloads.xiph.org/releases/vorbis/libvorbis-${VORBIS_VERSION}.tar.gz && \
         echo ${VORBIS_SHA256SUM} | sha256sum --check && \
@@ -134,9 +140,10 @@ RUN     buildDeps="autoconf \
         --disable-static --datadir="${DIR}" && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## libtheora http://www.theora.org/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sLO http://downloads.xiph.org/releases/theora/libtheora-${THEORA_VERSION}.tar.gz && \
         echo ${THEORA_SHA256SUM} | sha256sum --check && \
@@ -145,27 +152,30 @@ RUN     buildDeps="autoconf \
         --disable-static --datadir="${DIR}" && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## libvpx https://www.webmproject.org/code/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sL https://codeload.github.com/webmproject/libvpx/tar.gz/v${VPX_VERSION} | \
         tar -zx --strip-components=1 && \
         ./configure --prefix="${SRC}" --enable-vp8 --enable-vp9 --enable-pic --disable-debug --disable-examples --disable-docs --disable-install-bins --enable-shared && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## libmp3lame http://lame.sourceforge.net/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sL https://downloads.sf.net/project/lame/lame/${LAME_VERSION%.*}/lame-${LAME_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
         ./configure --prefix="${SRC}" --bindir="${SRC}/bin" --disable-static --enable-nasm --datarootdir="${DIR}" && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## xvid https://www.xvid.com/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sLO http://downloads.xvid.org/downloads/xvidcore-${XVID_VERSION}.tar.gz && \
         echo ${XVID_SHA256SUM} | sha256sum --check && \
@@ -174,9 +184,10 @@ RUN     buildDeps="autoconf \
         ./configure --prefix="${SRC}" --bindir="${SRC}/bin" --datadir="${DIR}" --disable-static --enable-shared && \
         make && \
         make install && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## fdk-aac https://github.com/mstorsjo/fdk-aac
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         curl -sL https://github.com/mstorsjo/fdk-aac/archive/v${FDKAAC_VERSION}.tar.gz | \
         tar -zx --strip-components=1 && \
@@ -185,9 +196,10 @@ RUN     buildDeps="autoconf \
         make && \
         make install && \
         make distclean && \
-        rm -rf ${DIR} && \
-#RUN  \
+        rm -rf ${DIR}
+
 ## ffmpeg https://ffmpeg.org/
+RUN  \
         DIR=$(mktemp -d) && cd ${DIR} && \
         gpg --keyserver ha.pool.sks-keyservers.net --recv-keys ${FFMPEG_KEY} && \
         curl -sLO http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.gz && \
@@ -237,8 +249,3 @@ RUN     buildDeps="autoconf \
         yum history -y undo last && yum clean all && \
         rm -rf /var/lib/yum/* && \
         ffmpeg -buildconf
-
-
-
-ENTRYPOINT []
-CMD ["/php_run.sh"]
